@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7faf8" />
+  <title>Premier League Tracker</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f8f6;
+      --surface: rgba(255,255,255,.92);
+      --surface-2: #f8fbf9;
+      --ink: #14231d;
+      --muted: #708078;
+      --line: #e4ece7;
+      --green: #13834e;
+      --green-dark: #075d38;
+      --green-soft: #e9f7ef;
+      --red: #d93e4f;
+      --gold: #d9a72e;
+      --shadow: 0 14px 38px rgba(18, 54, 36, .07);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--ink); background:
+        radial-gradient(circle at 8% 0%, rgba(20,131,78,.075), transparent 28rem),
+        linear-gradient(180deg, #fbfdfb 0%, var(--bg) 100%);
+      font-family: Tahoma, Arial, "Segoe UI", sans-serif;
+      transition: background .25s ease, color .25s ease;
+    }
+    body.dark {
+      color-scheme: dark; --bg: #0c1511; --surface: rgba(20,31,25,.96); --surface-2: #17231c;
+      --ink: #edf5ef; --muted: #a0b2a7; --line: #293a30; --green: #50ce89;
+      --green-dark: #9de8bb; --green-soft: #173426; --shadow: 0 16px 42px rgba(0,0,0,.24);
+      background: radial-gradient(circle at 10% 0%, rgba(35,170,98,.15), transparent 30rem), #0c1511;
+    }
+    button { font: inherit; }
+    .app-shell { width: min(1240px, calc(100% - 32px)); margin: 0 auto; padding: 18px 0 56px; }
+    .topbar { display:flex; direction:ltr; align-items:center; justify-content:space-between; gap:14px; padding: 7px 0 17px; }
+    .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+    .brand-mark { width:43px; height:43px; display:grid; place-items:center; color:#fff; border-radius:14px; background:linear-gradient(145deg,#19a764,#075d38); box-shadow:0 8px 18px rgba(8,112,62,.22); font-size:23px; }
+    .brand-name { font-size:clamp(16px,2.2vw,21px); font-weight:900; letter-spacing:.1px; white-space:nowrap; }
+    .brand-sub { color:var(--muted); font-size:11px; margin-top:3px; letter-spacing:1.3px; direction:ltr; text-align:right; }
+    .top-actions { display:flex; align-items:center; gap:8px; }
+    .icon-btn { border:1px solid var(--line); background:var(--surface); color:var(--ink); min-width:42px; height:42px; border-radius:13px; cursor:pointer; display:inline-grid; place-items:center; box-shadow:0 3px 12px rgba(0,0,0,.025); transition:transform .18s,border-color .18s; }
+    .icon-btn:hover { transform:translateY(-2px); border-color:#a9cdb8; }
+    .reset-btn { border:0; background:linear-gradient(135deg,#e44b5c,#b91f36); color:white; padding:0 13px; height:42px; border-radius:13px; cursor:pointer; font-weight:800; box-shadow:0 7px 17px rgba(217,62,79,.19); }
+    .reset-btn:hover { filter:brightness(1.05); transform:translateY(-1px); }
+    .hero { position:relative; overflow:hidden; min-height:220px; border-radius:28px; padding:26px 28px; color:#fff; background:linear-gradient(115deg,#063e2b 0%,#087548 52%,#0b9657 100%); box-shadow:0 20px 42px rgba(5,91,52,.19); }
+    .hero:before,.hero:after { content:""; position:absolute; border:1px solid rgba(255,255,255,.13); pointer-events:none; }
+    .hero:before { width:310px;height:310px;border-radius:50%;left:-75px;top:-85px; }
+    .hero:after { width:130px;height:130px;border-radius:50%;left:15px;top:5px; }
+    .pitch-lines { position:absolute; inset:0; opacity:.12; pointer-events:none; background:linear-gradient(90deg,transparent 49.8%,#fff 50%,transparent 50.2%),linear-gradient(0deg,transparent 49.8%,#fff 50%,transparent 50.2%); background-size:100% 100%; }
+    .pitch-lines:before { content:""; position:absolute; left:50%;top:50%;width:110px;height:110px;border:1px solid #fff;border-radius:50%; transform:translate(-50%,-50%); }
+    .hero-content { position:relative; z-index:1; max-width:720px; }
+    .season-kicker { display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1); border-radius:99px; font-size:12px; font-weight:700; }
+    .season-kicker:before { content:""; width:7px;height:7px;border-radius:50%;background:#9cf1bb;box-shadow:0 0 0 4px rgba(156,241,187,.14); }
+    .hero h1 { font-size:clamp(26px,4vw,39px); line-height:1.15; margin:14px 0 8px; font-weight:900; }
+    .hero p { margin:0; max-width:560px; color:rgba(255,255,255,.82); font-size:14px; line-height:1.8; }
+    .season-progress { margin-top:21px; width:min(510px,100%); }
+    .progress-meta { display:flex; justify-content:space-between; gap:12px; font-size:12px; color:rgba(255,255,255,.9); margin-bottom:8px; }
+    .progress-track { height:8px; border-radius:99px; background:rgba(0,0,0,.2); overflow:hidden; border:1px solid rgba(255,255,255,.1); }
+    .progress-fill { height:100%; border-radius:99px; width:0; background:linear-gradient(90deg,#b5f3c9,#fff); transition:width .4s ease; }
+    .hero-side { position:absolute; z-index:1; left:32px; bottom:25px; display:flex; align-items:center; gap:10px; color:rgba(255,255,255,.8); font-size:11px; }
+    .hero-side strong { color:#fff; font-size:14px; }
+    .section-head { display:flex; align-items:end; justify-content:space-between; gap:12px; margin:32px 2px 14px; }
+    .section-title { font-size:20px; font-weight:900; margin:0; letter-spacing:-.3px; }
+    .section-note { color:var(--muted); font-size:12px; margin:5px 0 0; }
+    .section-tag { color:var(--green); background:var(--green-soft); border:1px solid rgba(19,131,78,.13); padding:7px 11px; border-radius:99px; font-size:11px; font-weight:800; white-space:nowrap; }
+    .metrics-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
+    .metric-card { --accent:#2563eb; --accent-soft:#edf4ff; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:17px; min-width:0; box-shadow:var(--shadow); backdrop-filter:blur(14px); position:relative; overflow:hidden; }
+    .metric-card:before { content:"";position:absolute;right:0;top:0;width:4px;height:100%;background:var(--accent);opacity:.9; }
+    .metric-card.goals { --accent:#2563eb; --accent-soft:#edf4ff; }
+    .metric-card.assists { --accent:#d94657; --accent-soft:#fff0f1; }
+    .metric-card.defense { --accent:#d49a1e; --accent-soft:#fff7e4; }
+    .metric-card.saves { --accent:#0eaa83; --accent-soft:#e8fbf5; }
+    body.dark .metric-card.goals { --accent-soft:#172b4c; }
+    body.dark .metric-card.assists { --accent-soft:#3d2027; }
+    body.dark .metric-card.defense { --accent-soft:#3b3017; }
+    body.dark .metric-card.saves { --accent-soft:#12372f; }
+    .metric-head { display:flex; align-items:center; justify-content:space-between; gap:9px; }
+    .metric-name-wrap { display:flex; align-items:center; gap:9px; min-width:0; }
+    .metric-icon { width:39px;height:39px;border-radius:13px;display:grid;place-items:center;background:var(--accent-soft);font-size:21px;flex:none; }
+    .metric-name { font-weight:900; font-size:15px; }
+    .metric-limit { color:var(--muted); font-size:10px; margin-top:4px; }
+    .help-btn { flex:none; width:27px;height:27px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-weight:900;cursor:pointer; }
+    .metric-number-row { display:flex; align-items:baseline; justify-content:space-between; margin:15px 0 10px; }
+    .metric-count { font-size:31px; font-weight:900; letter-spacing:-1px; color:var(--ink); direction:ltr; }
+    .metric-count small { color:var(--muted);font-size:12px;font-weight:700;letter-spacing:0; }
+    .metric-percent { color:var(--accent);font-weight:900;font-size:12px;direction:ltr; }
+    .metric-progress {height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-bottom:13px;}
+    .metric-progress span {display:block;height:100%;width:0;border-radius:99px;background:var(--accent);transition:width .25s;}
+    .bubbles-grid { display:grid; grid-template-columns:repeat(14,minmax(0,1fr)); gap:6px; padding:3px 1px 6px; max-height:145px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
+    .bubble { aspect-ratio:1; min-width:0; border-radius:50%; border:1px solid var(--line); background:var(--surface-2); color:transparent; padding:0; cursor:pointer; transition:transform .15s,background .15s,border-color .15s,box-shadow .15s; position:relative; }
+    .bubble:hover:not(:disabled) { transform:scale(1.18); border-color:var(--accent); z-index:1; }
+    .bubble.active { background:var(--accent);border-color:var(--accent);box-shadow:0 2px 7px color-mix(in srgb,var(--accent) 25%,transparent); }
+    .bubble.active:after { content:"";position:absolute;inset:34%;border-radius:50%;background:rgba(255,255,255,.7); }
+    .bubble:disabled { cursor:not-allowed;opacity:.32; }
+    .bubble[data-day]:not(.active) { color:var(--muted);font-size:8px; }
+    .bubble[data-day]:not(.active):after { content:attr(data-day); position:absolute; inset:0; display:grid;place-items:center; }
+    .metric-controls {display:flex;align-items:center;justify-content:center;gap:9px;margin-top:13px;}
+    .control-btn {height:38px;min-width:43px;padding:0 13px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:17px;font-weight:900;cursor:pointer;transition:transform .15s,filter .15s;}
+    .control-btn:hover {transform:translateY(-2px);filter:brightness(.98);}
+    .control-btn.primary {background:var(--accent);color:#fff;border-color:var(--accent);min-width:100px;box-shadow:0 6px 13px color-mix(in srgb,var(--accent) 20%,transparent);font-size:14px;}
+    .control-btn.quick {border-color:var(--accent);color:var(--accent);font-size:12px;}
+    .counter-hint {text-align:center;color:var(--muted);font-size:10px;margin-top:9px;min-height:14px;}
+    .trophy-section,.league-section {background:var(--surface);border:1px solid var(--line);border-radius:25px;padding:19px;box-shadow:var(--shadow);}
+    .trophy-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+    .trophy-card {border:1px solid var(--line);border-radius:18px;padding:14px 10px 12px;text-align:center;background:linear-gradient(180deg,var(--surface),var(--surface-2));min-width:0;position:relative;overflow:hidden;}
+    .trophy-card.unlocked {border-color:rgba(205,157,45,.45);background:linear-gradient(180deg,rgba(255,248,223,.7),var(--surface));}
+    body.dark .trophy-card.unlocked {background:linear-gradient(180deg,rgba(95,72,24,.18),var(--surface));}
+    .trophy-card.unlocked:after {content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.12),transparent 70%);pointer-events:none;}
+    .trophy-figure {height:82px;display:grid;place-items:center;filter:drop-shadow(0 8px 5px rgba(116,83,18,.2));}
+    .trophy-figure svg {width:76px;height:76px;overflow:visible;}
+    .trophy-name {font-size:12px;font-weight:900;line-height:1.5;min-height:36px;}
+    .trophy-rule {color:var(--muted);font-size:10px;line-height:1.5;min-height:30px;margin-top:3px;}
+    .trophy-total {margin:9px auto 0;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;font-weight:900;direction:ltr;}
+    .trophy-card.unlocked .trophy-total {background:#fff1bd;color:#865c07;border-color:#f0d37f;}
+    body.dark .trophy-card.unlocked .trophy-total {background:#473716;color:#ffdc86;border-color:#72591f;}
+    .trophy-status {font-size:9px;color:var(--muted);margin-top:7px;}
+    .podium {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;direction:ltr;align-items:end;margin:9px 0 18px;}
+    .podium-card {direction:rtl;text-align:center;border:1px solid var(--line);border-radius:17px 17px 10px 10px;padding:14px 7px 10px;background:var(--surface-2);min-width:0;position:relative;}
+    .podium-card.first {min-height:142px;background:linear-gradient(180deg,rgba(255,226,144,.28),var(--surface-2));border-color:rgba(208,163,56,.55);}
+    .podium-card.second {min-height:119px;}.podium-card.third {min-height:106px;}
+    .podium-medal {font-size:25px;line-height:1.3;}
+    .podium-rank {font-size:9px;color:var(--muted);font-weight:800;margin-top:2px;}
+    .podium-name {font-size:12px;font-weight:900;margin-top:5px;overflow-wrap:anywhere;}
+    .podium-score {font-size:20px;font-weight:900;direction:ltr;margin-top:3px;}
+    .podium-score small {font-size:9px;color:var(--muted);}
+    .league-table-wrap {overflow-x:auto;border:1px solid var(--line);border-radius:15px;}
+    .league-table {width:100%;border-collapse:collapse;min-width:390px;font-size:12px;}
+    .league-table th {background:var(--surface-2);color:var(--muted);font-weight:800;font-size:10px;padding:12px 10px;text-align:right;}
+    .league-table td {padding:11px 10px;border-top:1px solid var(--line);font-weight:700;}
+    .league-table td:first-child,.league-table th:first-child{text-align:center;width:48px;}
+    .league-table td:last-child,.league-table th:last-child{text-align:left;direction:ltr;width:80px;}
+    .league-table tr.me {background:var(--green-soft);color:var(--green-dark);}
+    .league-table tr.me td {font-weight:900;}
+    .rank-pill {display:inline-grid;place-items:center;width:23px;height:23px;border-radius:8px;background:var(--surface-2);color:var(--muted);font-size:10px;}
+    .me .rank-pill {background:var(--green);color:white;}
+    .league-foot {display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px;margin-top:12px;line-height:1.6;}
+    .footer {text-align:center;color:var(--muted);font-size:10px;margin:22px 0 0;}
+    .modal-backdrop {position:fixed;inset:0;z-index:50;background:rgba(4,18,11,.55);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px);}
+    .modal-backdrop.open {display:flex;}
+    .modal {width:min(420px,100%);border:1px solid var(--line);border-radius:22px;background:var(--surface);color:var(--ink);padding:22px;box-shadow:0 25px 75px rgba(0,0,0,.25);animation:modalIn .2s ease-out;}
+    @keyframes modalIn {from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+    .modal-top {display:flex;justify-content:space-between;align-items:center;gap:10px;}
+    .modal h3 {margin:0;font-size:18px;}
+    .modal p {color:var(--muted);font-size:13px;line-height:1.9;margin:13px 0 18px;}
+    .modal-close {width:32px;height:32px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);cursor:pointer;}
+    .modal-ok {border:0;border-radius:12px;background:var(--green);color:#fff;padding:10px 20px;font-weight:800;cursor:pointer;}
+    .toast {position:fixed;z-index:70;bottom:20px;left:50%;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#102b1d;color:white;border:1px solid rgba(255,255,255,.14);padding:11px 16px;border-radius:13px;font-size:12px;font-weight:800;box-shadow:0 12px 30px rgba(0,0,0,.2);transition:opacity .22s,transform .22s;max-width:calc(100% - 30px);text-align:center;}
+    .toast.show {opacity:1;transform:translate(-50%,0);}
+    .fx-layer {position:fixed;inset:0;z-index:65;pointer-events:none;overflow:hidden;}
+    .fx-emoji {position:absolute;left:50%;top:60%;font-size:42px;filter:drop-shadow(0 8px 8px rgba(0,0,0,.18));animation:goalFly 1.15s cubic-bezier(.15,.7,.2,1) forwards;}
+    .fx-emoji.assist {animation:assistFly .95s ease-out forwards;}
+    .fx-emoji.save {animation:savePop .85s ease-out forwards;}
+    .fx-emoji.defense {animation:shieldPop .95s ease-out forwards;}
+    .fx-emoji.fire {font-size:38px;animation:fireBall 1.5s ease-out forwards;}
+    @keyframes goalFly {0%{transform:translate(-50%,45px) scale(.55) rotate(-20deg);opacity:0}15%{opacity:1}75%{transform:translate(calc(-50% + 38px),-240px) scale(1.12) rotate(300deg)}100%{transform:translate(calc(-50% + 38px),-300px) scale(.6) rotate(440deg);opacity:0}}
+    @keyframes assistFly {0%{transform:translate(-50%,0) scale(.4) rotate(-35deg);opacity:0}20%{opacity:1}100%{transform:translate(160px,-120px) scale(1.15) rotate(35deg);opacity:0}}
+    @keyframes savePop {0%{transform:translate(-50%,45px) scale(.3);opacity:0}35%{opacity:1;transform:translate(-50%,-20px) scale(1.3)}100%{transform:translate(-50%,-150px) scale(.85);opacity:0}}
+    @keyframes shieldPop {0%{transform:translate(-50%,20px) scale(.3);opacity:0}30%{opacity:1;transform:translate(-50%,-25px) scale(1.3)}100%{transform:translate(-50%,-135px) scale(1);opacity:0}}
+    @keyframes fireBall {0%{transform:translate(-50%,40px) scale(.3);opacity:0}20%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-220px + var(--dy))) scale(1.1) rotate(330deg);opacity:0}}
+    .confetti {position:absolute;top:62%;left:50%;width:8px;height:13px;border-radius:2px;animation:confetti 1.65s ease-out forwards;}
+    @keyframes confetti {0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(680deg);opacity:0}}
+    .sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+    @media (max-width:720px) {
+      .app-shell{width:min(100% - 22px,560px);padding-top:11px;}
+      .topbar{gap:8px;} .brand{gap:8px;} .brand-name{font-size:14px;} .brand-sub{font-size:9px;}
+      .hero{padding:22px 19px;min-height:230px;border-radius:22px;}
+      .hero-side{left:18px;bottom:15px;}
+      .metrics-grid{grid-template-columns:1fr;gap:12px;}
+      .metric-card{padding:15px;}
+      .bubbles-grid{grid-template-columns:repeat(15,minmax(0,1fr));max-height:132px;}
+      .section-head{margin-top:25px;}
+      .trophy-section,.league-section{padding:14px;border-radius:20px;}
+      .trophy-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+      .trophy-card{padding:11px 8px;}
+      .trophy-figure{height:72px;}.trophy-figure svg{width:68px;height:68px;}
+      .podium{gap:6px;}.podium-card{padding:11px 5px;}
+      .podium-name{font-size:11px;}
+    }
+    @media (max-width:390px) {
+      .brand-mark{width:38px;height:38px;}.brand-name{font-size:13px;}.top-actions{gap:6px;}.icon-btn{min-width:38px;height:38px;}.reset-btn{height:38px;padding:0 9px;font-size:12px;}
+      .bubbles-grid{grid-template-columns:repeat(13,minmax(0,1fr));gap:5px;}
+      .metric-name{font-size:14px;}
+    }
+    @media (max-width:350px) { .brand-name{font-size:11px;letter-spacing:-.25px;} .brand-sub{font-size:8px;} .brand-mark{width:34px;height:34px;} .icon-btn{min-width:34px;height:36px;} .reset-btn{height:36px;font-size:11px;padding:0 7px;} }
+    @media (prefers-reduced-motion:reduce) { *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important;} }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">⚽</div>
+        <div>
+          <div class="brand-name">Premier League Tracker</div>
+          <div class="brand-sub">YOUR SEASON. YOUR LEGACY.</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeToggle" type="button" aria-label="تغيير المظهر" title="تغيير المظهر">☾</button>
+        <button class="reset-btn" id="hardReset" type="button">💣 إعادة ضبط</button>
+      </div>
+    </header>
+
+    <section class="hero" aria-label="ملخص الموسم">
+      <div class="pitch-lines"></div>
+      <div class="hero-content">
+        <span class="season-kicker" id="seasonLabel">الموسم الأول</span>
+        <h1>الملعب ملعبك.<br>والإنجاز يُحسب لك.</h1>
+        <p>حوّل ساعات تركيزك إلى أهداف، وأيام انضباطك إلى بطولات. كل إنجاز صغير يقرّبك من كأس الموسم.</p>
+        <div class="season-progress">
+          <div class="progress-meta"><span id="seasonDayText">اليوم 1 من 30</span><strong id="seasonDaysLeft">متبقي 29 يومًا</strong></div>
+          <div class="progress-track"><div class="progress-fill" id="seasonProgress"></div></div>
+        </div>
+      </div>
+      <div class="hero-side"><span>إجمالي الكؤوس</span><strong id="totalTrophies">0</strong><span>🏆</span></div>
+    </section>
+
+    <section aria-labelledby="statsTitle">
+      <div class="section-head">
+        <div><h2 class="section-title" id="statsTitle">لوحة أداء الموسم</h2><p class="section-note">سجّل إنجازاتك اليومية واجعل كل دائرة تمثل خطوة للأمام.</p></div>
+        <span class="section-tag">LIVE SEASON</span>
+      </div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </section>
+
+    <section aria-labelledby="trophyTitle">
+      <div class="section-head"><div><h2 class="section-title" id="trophyTitle">كابينة الكؤوس الذهبية</h2><p class="section-note">إنجازات تراكمية لا تُمسح عند بداية موسم جديد.</p></div><span class="section-tag">HALL OF FAME</span></div>
+      <div class="trophy-section"><div class="trophy-grid" id="trophyGrid"></div></div>
+    </section>
+
+    <section aria-labelledby="leagueTitle">
+      <div class="section-head"><div><h2 class="section-title" id="leagueTitle">دوري النخبة — Top 20</h2><p class="section-note">نافس 19 لاعبًا افتراضيًا وتقدّم في جدول الهدافين.</p></div><span class="section-tag">LEAGUE TABLE</span></div>
+      <div class="league-section">
+        <div class="podium" id="podium"></div>
+        <div class="league-table-wrap">
+          <table class="league-table">
+            <thead><tr><th>#</th><th>اللاعب</th><th>الأهداف</th></tr></thead>
+            <tbody id="leagueBody"></tbody>
+          </table>
+        </div>
+        <div class="league-foot"><span>ⓘ</span><span>نتائج اللاعبين المنافسين محاكاة يومية داخل التطبيق وليست إحصاءات رياضية حقيقية.</span></div>
+      </div>
+    </section>
+    <p class="footer">Premier League Tracker · بياناتك محفوظة تلقائيًا على هذا الجهاز.</p>
+  </main>
+
+  <div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal"><div class="modal-top"><h3 id="modalTitle">تفاصيل الإنجاز</h3><button class="modal-close" id="modalClose" type="button" aria-label="إغلاق">✕</button></div><p id="modalText"></p><button class="modal-ok" id="modalOk" type="button">فهمت</button></div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const STORAGE_KEY = 'premier_league_tracker_v1';
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const SEASON_DAYS = 30;
+      const SEASON_MS = DAY_MS * SEASON_DAYS;
+      const METRICS = {
+        goals: { label:'أهداف الموسم', icon:'⚽', max:350, color:'goals', help:'كل هدف = ساعة مذاكرة فعلية مركزة.', hint:'كل هدف يساوي ساعة مذاكرة فعلية مركزة.' },
+        assists: { label:'التمريرات الحاسمة', icon:'👟', max:50, color:'assists', help:'كل تمريرة حاسمة = مذاكرة متوسطة، أو إنهاء المفردات/القصة، أو قراءة وحدة دراسية كاملة.', hint:'سجّل جلسة مذاكرة متوسطة أو إنهاء جزء دراسي واضح.' },
+        defense: { label:'جدار الدفاع', icon:'🛡️', max:30, color:'defense', help:'كل نقطة = يوم كامل بدون تشتت ولا انهزام.', hint:'كل دائرة تمثل يومًا من أيام الموسم؛ لا يمكن تسجيل يوم مستقبلي.' },
+        saves: { label:'التصديات', icon:'🧤', max:50, color:'saves', help:'إنقاذ يومك من الضياع أو تدارك التعثر أثناء المذاكرة.', hint:'سجّل إنقاذ يومك أو استعادة تركيزك بعد التعثر.' }
+      };
+      const TROPHIES = [
+        { id:'scorer', name:'كأس هداف الموسم', rule:'150 هدفًا في موسم واحد', threshold:150, icon:'cup' },
+        { id:'ballon', name:'البالون دور', rule:'30 يومًا كاملة في جدار الدفاع', threshold:30, icon:'ball' },
+        { id:'pen', name:'كأس القلم الذهبي', rule:'30 تمريرة حاسمة في موسم واحد', threshold:30, icon:'pen' },
+        { id:'hat', name:'وسام الهاتريك', rule:'كل 7 أيام دفاع متتالية', threshold:7, icon:'shield' }
+      ];
+      const BOTS = [
+        ['إيرلينغ هالاند',149,1.6],['كيليان مبابي',140,1.55],['محمد صلاح',132,1.5],['هاري كين',125,1.35],
+        ['روبرت ليفاندوفسكي',117,1.3],['فينيسيوس جونيور',109,1.25],['جود بيلينغهام',101,1.2],['كيفن دي بروين',94,1.1],
+        ['سون هيونغ مين',87,1.05],['لاوتارو مارتينيز',80,1],['بوكايو ساكا',74,.95],['فيل فودين',68,.9],
+        ['كول بالمر',62,.85],['أنطوان غريزمان',56,.8],['رودري',50,.75],['نيمار',44,.7],['كريستيانو رونالدو',39,.65],
+        ['ليونيل ميسي',34,.6],['مارتن أوديغارد',30,.55]
+      ];
+      let data;
+      let safeNow;
+      let toastTimer = null;
+
+      const $ = (selector, root=document) => root.querySelector(selector);
+      const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
+      const emptyBools = n => Array.from({length:n},()=>false);
+      const defaults = () => {
+        const now = Date.now();
+        return {
+          version:1, theme:'light', seasonOrigin:now, seasonNumber:1,
+          counters:{goals:emptyBools(350),assists:emptyBools(50),defenseDays:[],saves:emptyBools(50)},
+          trophies:{scorer:0,ballon:0,pen:0,hat:0}, awardedKeys:[], seasonHistory:[], lastSeen:now
+        };
+      };
+      function normalize(raw) {
+        const base = defaults();
+        if (!raw || typeof raw !== 'object') return base;
+        const out = {...base,...raw};
+        out.theme = raw.theme === 'dark' ? 'dark' : 'light';
+        out.seasonOrigin = Number.isFinite(raw.seasonOrigin) ? raw.seasonOrigin : base.seasonOrigin;
+        out.seasonNumber = Number.isFinite(raw.seasonNumber) ? Math.max(1,Math.floor(raw.seasonNumber)) : 1;
+        const rawC = raw.counters || {};
+        const normalizeBools = (arr,len) => Array.from({length:len},(_,i)=>Array.isArray(arr) && arr[i] === true);
+        out.counters = {
+          goals:normalizeBools(rawC.goals,350), assists:normalizeBools(rawC.assists,50),
+          defenseDays:Array.isArray(rawC.defenseDays) ? [...new Set(rawC.defenseDays.map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=30))].sort((a,b)=>a-b) : [],
+          saves:normalizeBools(rawC.saves,50)
+        };
+        out.trophies = {...base.trophies,...(raw.trophies || {})};
+        for (const id of Object.keys(base.trophies)) out.trophies[id] = Number.isFinite(out.trophies[id]) ? Math.max(0,Math.floor(out.trophies[id])) : 0;
+        out.awardedKeys = Array.isArray(raw.awardedKeys) ? raw.awardedKeys.filter(x=>typeof x==='string').slice(-2000) : [];
+        out.seasonHistory = Array.isArray(raw.seasonHistory) ? raw.seasonHistory.slice(-100) : [];
+        out.lastSeen = Number.isFinite(raw.lastSeen) ? raw.lastSeen : base.lastSeen;
+        return out;
+      }
+      function loadData() {
+        try { const raw = localStorage.getItem(STORAGE_KEY); data = normalize(raw ? JSON.parse(raw) : null); }
+        catch (error) { data = defaults(); showToast('تعذر قراءة الحفظ السابق؛ بدأ التطبيق ببيانات جديدة.'); }
+      }
+      function getSafeNow() {
+        const actual = Date.now();
+        const previous = Number.isFinite(data.lastSeen) ? data.lastSeen : actual;
+        safeNow = Math.max(actual, previous, data.seasonOrigin);
+        if (safeNow !== data.lastSeen) data.lastSeen = safeNow;
+        return safeNow;
+      }
+      function saveData() {
+        try { data.lastSeen = Math.max(data.lastSeen || 0, getSafeNow()); localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); }
+        catch (error) { showToast('تعذر الحفظ في هذا المتصفح. تحقق من مساحة التخزين.'); }
+      }
+      function seasonInfo() {
+        const now = getSafeNow();
+        const elapsed = Math.max(0,now-data.seasonOrigin);
+        const currentNumber = Math.floor(elapsed/SEASON_MS)+1;
+        if (currentNumber > data.seasonNumber) {
+          data.seasonHistory.push({
+            season:data.seasonNumber, goals:count('goals'), assists:count('assists'),
+            defense: data.counters.defenseDays.length, saves:count('saves'), closedAt:data.seasonOrigin + data.seasonNumber*SEASON_MS
+          });
+          data.seasonHistory = data.seasonHistory.slice(-100);
+          data.seasonNumber = currentNumber;
+          data.counters = {goals:emptyBools(350),assists:emptyBools(50),defenseDays:[],saves:emptyBools(50)};
+        }
+        const seasonStart = data.seasonOrigin + (data.seasonNumber-1)*SEASON_MS;
+        const day = clamp(Math.floor((now-seasonStart)/DAY_MS)+1,1,30);
+        return {now,number:data.seasonNumber,day,daysLeft:30-day,progress:day/30,seasonStart};
+      }
+      function count(type) {
+        if(type==='defense') return data.counters.defenseDays.length;
+        const arr = data.counters[type] || [];
+        return arr.reduce((sum,v)=>sum+(v?1:0),0);
+      }
+      function addTrophy(id,key,animate=true) {
+        if (data.awardedKeys.includes(key)) return false;
+        data.awardedKeys.push(key);
+        data.trophies[id] = (data.trophies[id] || 0)+1;
+        const name = TROPHIES.find(t=>t.id===id)?.name || 'إنجاز جديد';
+        if (animate) {
+          showToast('🏆 حصلت على '+name+'!');
+          if (id==='hat') playEffect('hat');
+          else playEffect('trophy');
+        }
+        return true;
+      }
+      function evaluateTrophies(animate=true) {
+        const season = data.seasonNumber;
+        if(count('goals')>=150) addTrophy('scorer',`scorer-${season}`,animate);
+        if(count('defense')>=30) addTrophy('ballon',`ballon-${season}`,animate);
+        if(count('assists')>=30) addTrophy('pen',`pen-${season}`,animate);
+        const days = [...data.counters.defenseDays].sort((a,b)=>a-b);
+        let streak=0, previous=0;
+        for(const day of days){
+          streak = day===previous+1 ? streak+1 : 1;
+          if(streak>=7 && streak%7===0) addTrophy('hat',`hat-${season}-${day}`,animate);
+          previous=day;
+        }
+      }
+      function renderMetric(type,info) {
+        const meta = METRICS[type];
+        const amount = count(type);
+        const bubbles = type==='defense'
+          ? Array.from({length:30},(_,i)=>{
+              const day=i+1, active=data.counters.defenseDays.includes(day), disabled=day>info.day;
+              return `<button class="bubble ${active?'active':''}" type="button" data-bubble-type="defense" data-index="${day}" data-day="${day}" ${disabled?'disabled':''} aria-label="اليوم ${day}${active?' مسجل':' غير مسجل'}" title="اليوم ${day}"></button>`;
+            }).join('')
+          : data.counters[type].map((active,i)=>`<button class="bubble ${active?'active':''}" type="button" data-bubble-type="${type}" data-index="${i}" aria-label="${meta.label} ${i+1}${active?' مسجل':' غير مسجل'}" title="${meta.label} ${i+1}"></button>`).join('');
+        const percent = Math.round(amount/meta.max*100);
+        const mainLabel = type==='goals' ? '+1 هدف' : type==='assists' ? '+1 أسيست' : type==='defense' ? '+1 يوم' : '+1 تصدٍ';
+        const controls = `<button class="control-btn" type="button" data-action="minus" data-type="${type}" aria-label="تنقيص واحد">−1</button><button class="control-btn primary" type="button" data-action="plus" data-type="${type}">${mainLabel}</button>${type==='goals'?'<button class="control-btn quick" type="button" data-action="plus5" data-type="goals">+5 ساعات</button>':''}`;
+        const extraHint = type==='defense' ? `سجّلت ${amount} من 30 يومًا` : `المتبقي ${meta.max-amount}`;
+        return `<article class="metric-card ${meta.color}" data-card="${type}">
+          <div class="metric-head"><div class="metric-name-wrap"><div class="metric-icon">${meta.icon}</div><div><div class="metric-name">${meta.label}</div><div class="metric-limit">الحد الأقصى ${meta.max} / الموسم</div></div></div><button class="help-btn" type="button" data-help="${type}" aria-label="شرح ${meta.label}">؟</button></div>
+          <div class="metric-number-row"><div class="metric-count"><span>${amount}</span> <small>/ ${meta.max}</small></div><div class="metric-percent">${percent}%</div></div>
+          <div class="metric-progress"><span style="width:${percent}%"></span></div>
+          <div class="bubbles-grid" aria-label="دوائر ${meta.label}">${bubbles}</div>
+          <div class="metric-controls">${controls}</div><div class="counter-hint">${extraHint}</div>
+        </article>`;
+      }
+      function trophySvg(kind) {
+        const gold = 'linearGradient';
+        if(kind==='ball') return `<svg viewBox="0 0 100 100" role="img" aria-label="كرة ذهبية"><defs><linearGradient id="goldBall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff4b1"/><stop offset=".35" stop-color="#edc34d"/><stop offset=".7" stop-color="#b97913"/><stop offset="1" stop-color="#ffe58a"/></linearGradient></defs><circle cx="50" cy="40" r="29" fill="url(#goldBall)" stroke="#9f6a13" stroke-width="2"/><path d="M50 13 60 29 54 47 35 47 28 29Z M50 13 72 28 60 29 M35 47 29 67 50 78 71 67 65 47 M28 29 12 40 21 62 29 67 M72 28 88 40 79 62 71 67" fill="none" stroke="#fff0a1" stroke-width="2.2" opacity=".85"/><path d="M35 79h30v5H35zM39 85h22v5H39z" fill="#b47b18"/></svg>`;
+        if(kind==='pen') return `<svg viewBox="0 0 100 100" role="img" aria-label="قلم ذهبي"><defs><linearGradient id="goldPen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff6c8"/><stop offset=".45" stop-color="#d99a22"/><stop offset="1" stop-color="#8c570d"/></linearGradient></defs><path d="m24 70 8-22 34-34q5-5 10 0l7 7q5 5 0 10L49 65l-22 9z" fill="url(#goldPen)" stroke="#9c6715" stroke-width="2"/><path d="m32 48 18 17M66 14l18 18M24 70l3 4 7-2" fill="none" stroke="#fff1a7" stroke-width="3"/><path d="M21 82 24 70l7 7z" fill="#8d5b12"/><path d="M15 89 23 82 18 78z" fill="#e5bb52"/></svg>`;
+        if(kind==='shield') return `<svg viewBox="0 0 100 100" role="img" aria-label="وسام ذهبي"><defs><linearGradient id="goldShield" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff6c9"/><stop offset=".4" stop-color="#e2b33d"/><stop offset="1" stop-color="#9d6511"/></linearGradient></defs><path d="M50 8 79 19v24c0 22-12 37-29 48C33 80 21 65 21 43V19z" fill="url(#goldShield)" stroke="#98600e" stroke-width="3"/><path d="m50 22 7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z" fill="#fff4bc" stroke="#b47d18" stroke-width="1.5"/><path d="m35 85-4 11 19-7 19 7-4-11" fill="#bd8a24"/></svg>`;
+        return `<svg viewBox="0 0 100 100" role="img" aria-label="كأس ذهبي"><defs><linearGradient id="goldCup" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff8c9"/><stop offset=".25" stop-color="#e9c34f"/><stop offset=".55" stop-color="#b87812"/><stop offset=".78" stop-color="#ffe78b"/><stop offset="1" stop-color="#9c6410"/></linearGradient></defs><path d="M29 14h42v20c0 19-8 29-21 34C37 63 29 53 29 34z" fill="url(#goldCup)" stroke="#98620e" stroke-width="2"/><path d="M29 22H14v9c0 15 9 22 24 22M71 22h15v9c0 15-9 22-24 22" fill="none" stroke="#dba52f" stroke-width="8"/><path d="M47 67h6v15h-6zM35 82h30v7H35zM30 90h40v6H30z" fill="url(#goldCup)" stroke="#98620e" stroke-width="1.5"/><path d="M37 21h26" stroke="#fff8cb" stroke-width="3" opacity=".9"/></svg>`;
+      }
+      function renderTrophies() {
+        $('#trophyGrid').innerHTML = TROPHIES.map(t=>{
+          const total=data.trophies[t.id]||0, unlocked=total>0;
+          const current = t.id==='scorer'?count('goals'):t.id==='ballon'?count('defense'):t.id==='pen'?count('assists'):0;
+          const progress = t.id==='hat' ? `${data.counters.defenseDays.length} يومًا مسجلًا هذا الموسم` : `${Math.min(current,t.threshold)} / ${t.threshold} هذا الموسم`;
+          return `<article class="trophy-card ${unlocked?'unlocked':''}"><div class="trophy-figure">${trophySvg(t.icon)}</div><div class="trophy-name">${t.name}</div><div class="trophy-rule">${t.rule}</div><div class="trophy-total">× ${total}</div><div class="trophy-status">${unlocked?'إنجاز محفوظ في السجل':'لم يُحصل عليه بعد'} · ${progress}</div></article>`;
+        }).join('');
+        $('#totalTrophies').textContent = Object.values(data.trophies).reduce((a,b)=>a+b,0);
+      }
+      function getLeaderboard(info) {
+        const botRows=BOTS.map(([name,base,pace],i)=>({name,score:base+Math.floor((info.day-1)*pace),isUser:false,seed:i}));
+        botRows.push({name:'أنت',score:count('goals'),isUser:true,seed:99});
+        botRows.sort((a,b)=>b.score-a.score || (a.isUser?-1:b.isUser?1:a.seed-b.seed));
+        return botRows;
+      }
+      function renderLeague(info) {
+        const rows=getLeaderboard(info);
+        const top=rows.slice(0,3);
+        const podiumOrder=[{r:top[1],cls:'second',medal:'🥈',rank:'المركز الثاني'},{r:top[0],cls:'first',medal:'🥇',rank:'المركز الأول'},{r:top[2],cls:'third',medal:'🥉',rank:'المركز الثالث'}];
+        $('#podium').innerHTML=podiumOrder.map(x=>`<div class="podium-card ${x.cls}"><div class="podium-medal">${x.medal}</div><div class="podium-rank">${x.rank}</div><div class="podium-name">${x.r.name}${x.r.isUser?' (أنت)':''}</div><div class="podium-score">${x.r.score} <small>هدف</small></div></div>`).join('');
+        $('#leagueBody').innerHTML=rows.map((r,i)=>`<tr class="${r.isUser?'me':''}"><td><span class="rank-pill">${i+1}</span></td><td>${r.name}${r.isUser?' <span style="font-size:9px">★</span>':''}</td><td>${r.score}</td></tr>`).join('');
+      }
+      function render() {
+        const info=seasonInfo();
+        $('#seasonLabel').textContent=`الموسم ${arabicNumber(info.number)}`;
+        $('#seasonDayText').textContent=`اليوم ${info.day} من 30`;
+        $('#seasonDaysLeft').textContent=info.daysLeft===0?'آخر يوم في الموسم':`متبقي ${info.daysLeft} يومًا`;
+        $('#seasonProgress').style.width=`${Math.round(info.progress*100)}%`;
+        $('#metricsGrid').innerHTML=Object.keys(METRICS).map(type=>renderMetric(type,info)).join('');
+        renderTrophies(); renderLeague(info);
+      }
+      function arabicNumber(n) {
+        const words=['الأول','الثاني','الثالث','الرابع','الخامس','السادس','السابع','الثامن','التاسع','العاشر'];
+        return words[n-1] || n.toLocaleString('ar-EG');
+      }
+      function showToast(message) {
+        const el=$('#toast'); el.textContent=message; el.classList.add('show');
+        clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
+      }
+      function openHelp(type) {
+        $('#modalTitle').textContent=METRICS[type].label;
+        $('#modalText').textContent=METRICS[type].help;
+        $('#infoModal').classList.add('open');
+      }
+      function closeHelp() { $('#infoModal').classList.remove('open'); }
+      function playSound(type) {
+        try {
+          const AudioCtx=window.AudioContext||window.webkitAudioContext;
+          if(!AudioCtx) return;
+          const ctx=new AudioCtx();
+          const notes=type==='hat'?[520,660,790,1040]:type==='trophy'?[660,880]:[type==='goal'?740:type==='assist'?570:type==='save'?830:490, type==='goal'?980:760];
+          notes.forEach((frequency,index)=>{
+            const osc=ctx.createOscillator(),gain=ctx.createGain(),start=ctx.currentTime+index*.095;
+            osc.type='sine';osc.frequency.setValueAtTime(frequency,start);
+            gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.09,start+.025);gain.gain.exponentialRampToValueAtTime(.0001,start+.19);
+            osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+.2);
+          });
+          setTimeout(()=>ctx.close().catch(()=>{}),850);
+        } catch (_) { /* الصوت تحسين اختياري حسب دعم المتصفح */ }
+      }
+      function playEffect(type) {
+        const layer=$('#fxLayer');
+        const add=(emoji,cls,dx='0px',dy='0px')=>{
+          const node=document.createElement('span');node.className=`fx-emoji ${cls||''}`;node.textContent=emoji;
+          node.style.setProperty('--dx',dx);node.style.setProperty('--dy',dy);layer.appendChild(node);setTimeout(()=>node.remove(),1750);
+        };
+        if(type==='hat'){
+          add('⚽🔥','fire','-120px','-35px');add('⚽🔥','fire','0px','-85px');add('⚽🔥','fire','120px','-25px');
+          for(let i=0;i<32;i++){
+            const c=document.createElement('i');c.className='confetti';
+            c.style.background=['#f6c94d','#35c879','#ec5969','#67a9ff','#fff'][i%5];
+            c.style.setProperty('--dx',`${(Math.random()-.5)*390}px`);c.style.setProperty('--dy',`${-80-Math.random()*260}px`);
+            c.style.animationDelay=`${Math.random()*.18}s`;layer.appendChild(c);setTimeout(()=>c.remove(),1900);
+          }
+          playSound('hat');return;
+        }
+        const map={goal:['⚽',''],assist:['👟','assist'],save:['🧤','save'],defense:['🛡️','defense'],trophy:['🏆','']};
+        const pair=map[type]||map.goal;add(pair[0],pair[1]);playSound(type);
+      }
+      function mutateArray(type,operation,amount=1) {
+        const arr=data.counters[type];
+        let changed=false;
+        if(operation==='add'){
+          for(let i=0;i<amount;i++){const idx=arr.indexOf(false);if(idx===-1)break;arr[idx]=true;changed=true;}
+        } else if(operation==='remove'){
+          for(let i=0;i<amount;i++){const idx=arr.lastIndexOf(true);if(idx===-1)break;arr[idx]=false;changed=true;}
+        }
+        return changed;
+      }
+      function addDefenseDay() {
+        const info=seasonInfo();
+        if(data.counters.defenseDays.includes(info.day)){showToast('تم تسجيل يومك الحالي بالفعل.');return false;}
+        data.counters.defenseDays.push(info.day);data.counters.defenseDays.sort((a,b)=>a-b);return true;
+      }
+      function removeDefenseDay() {
+        const days=data.counters.defenseDays;
+        if(!days.length)return false;
+        days.pop();return true;
+      }
+      function handleAction(action,type) {
+        let changed=false, effect=type==='goals'?'goal':type==='assists'?'assist':type==='saves'?'save':'defense';
+        if(type==='defense'){
+          if(action==='plus')changed=addDefenseDay();
+          else if(action==='minus')changed=removeDefenseDay();
+        } else if(action==='plus') changed=mutateArray(type,'add',1);
+        else if(action==='minus') changed=mutateArray(type,'remove',1);
+        else if(action==='plus5') changed=mutateArray(type,'add',5);
+        if(!changed){if(action!=='plus' || type!=='defense')showToast(action==='minus'?'لا توجد نقاط لإزالتها.':'وصلت إلى الحد الأقصى لهذا القسم.');return;}
+        evaluateTrophies(true);saveData();render();playEffect(effect);
+      }
+      function toggleBubble(type,index) {
+        let changed=false;
+        if(type==='defense'){
+          const info=seasonInfo();
+          if(index>info.day)return;
+          const list=data.counters.defenseDays,at=list.indexOf(index);
+          if(at>=0)list.splice(at,1);else list.push(index);
+          list.sort((a,b)=>a-b);changed=true;
+        } else {
+          const arr=data.counters[type];
+          if(!arr || index<0 || index>=arr.length)return;
+          arr[index]=!arr[index];changed=true;
+        }
+        if(changed){evaluateTrophies(true);saveData();render();if(type==='defense')playEffect('defense');else playEffect(type==='goals'?'goal':type==='assists'?'assist':'save');}
+      }
+      function applyTheme() {
+        document.body.classList.toggle('dark',data.theme==='dark');
+        $('#themeToggle').textContent=data.theme==='dark'?'☀':'☾';
+        $('#themeToggle').title=data.theme==='dark'?'الوضع الفاتح':'الوضع الليلي';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content',data.theme==='dark'?'#0c1511':'#f7faf8');
+      }
+      function hardReset() {
+        const ok=window.confirm('هل تريد حذف جميع العدادات والكؤوس وسجل المواسم نهائيًا؟ لا يمكن التراجع عن هذه العملية.');
+        if(!ok)return;
+        try{localStorage.removeItem(STORAGE_KEY);}catch(_){ }
+        data=defaults();saveData();applyTheme();render();showToast('تمت إعادة ضبط التطبيق بالكامل.');
+      }
+      $('#metricsGrid').addEventListener('click',event=>{
+        const help=event.target.closest('[data-help]');
+        if(help){openHelp(help.dataset.help);return;}
+        const bubble=event.target.closest('[data-bubble-type]');
+        if(bubble){toggleBubble(bubble.dataset.bubbleType,Number(bubble.dataset.index));return;}
+        const action=event.target.closest('[data-action]');
+        if(action)handleAction(action.dataset.action,action.dataset.type);
+      });
+      $('#themeToggle').addEventListener('click',()=>{data.theme=data.theme==='dark'?'light':'dark';saveData();applyTheme();});
+      $('#hardReset').addEventListener('click',hardReset);
+      $('#modalClose').addEventListener('click',closeHelp);$('#modalOk').addEventListener('click',closeHelp);
+      $('#infoModal').addEventListener('click',e=>{if(e.target.id==='infoModal')closeHelp();});
+      document.addEventListener('keydown',e=>{if(e.key==='Escape')closeHelp();});
+      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){seasonInfo();evaluateTrophies(false);saveData();render();}});
+      loadData();
+      seasonInfo();
+      evaluateTrophies(false);
+      applyTheme();
+      saveData();
+      render();
+    })();
+  </script>
+</body>
+</html>
